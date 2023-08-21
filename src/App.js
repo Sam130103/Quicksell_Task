@@ -1,153 +1,111 @@
 import React, { useEffect, useState } from "react";
 import axios from 'axios';
-import './App.css'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHashtag, faHeading, faTag } from '@fortawesome/free-solid-svg-icons';
+import './App.css';
+
 function App() {
-  // Define the URL of the API endpoint
   const apiUrl = 'https://api.quicksell.co/v1/internal/frontend-assignment';
 
-  // Use Axios to make the GET request
-  const [elementData_0, setelementData_0] = useState([]);
+  const [elementData, setElementData] = useState([]);
+  const [userData, setUserData] = useState([]);
+  const [groupBy, setGroupBy] = useState("status"); // Default grouping by status
+  const [sortBy, setSortBy] = useState("priority"); // Default sorting by priority
 
   useEffect(() => {
+    const savedGroupBy = localStorage.getItem("group_by");
+    const savedSortBy = localStorage.getItem("sort_by");
+
+    if (savedGroupBy) {
+      setGroupBy(savedGroupBy);
+    }
+
+    if (savedSortBy) {
+      setSortBy(savedSortBy);
+    }
+
     axios.get(apiUrl)
       .then(response => {
-        setelementData_0(response.data.tickets);
+        setElementData(response.data.tickets);
+        setUserData(response.data.users);
       })
       .catch(error => {
-        // Handle errors
         console.error('Error:', error);
       });
   }, []);
 
+  useEffect(() => {
+    localStorage.setItem("group_by", groupBy);
+  }, [groupBy]);
+
+  useEffect(() => {
+    localStorage.setItem("sort_by", sortBy);
+  }, [sortBy]);
+
+  const groupAndSortData = () => {
+    let groupedData = {};
+
+    // Group data based on the selected grouping option
+    elementData.forEach(ele => {
+      const groupKey = groupBy === "status" ? ele.status :
+        groupBy === "user" ? ele.assigned_to :
+          groupBy === "priority" ? ele.priority : "";
+
+      if (!groupedData[groupKey]) {
+        groupedData[groupKey] = [];
+      }
+      groupedData[groupKey].push(ele);
+    });
+
+    // Sort grouped data based on the selected sorting option
+    for (const groupKey in groupedData) {
+      if (sortBy === "priority") {
+        groupedData[groupKey].sort((a, b) => b.priority - a.priority);
+      } else if (sortBy === "title") {
+        groupedData[groupKey].sort((a, b) => a.title.localeCompare(b.title));
+      }
+    }
+
+    return groupedData;
+  };
+
+  const groupedAndSortedData = groupAndSortData();
+
   return (
     <div className="App">
-      <div class="verificationselect" style={{ margin: '0 auto' }}>
-        <select  className="verificationselect">
-          <option value="0">Pending</option>
-          <option value="1">Approved</option>
-          <option value="2">Rejected</option>
+      <div className="header">
+        <select className="group-select" value={groupBy} onChange={(e) => setGroupBy(e.target.value)}>
+          <option value="status">By Status</option>
+          <option value="user">By User</option>
+          <option value="priority">By Priority</option>
+        </select>
+        <select className="sort-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+          <option value="priority">Sort by Priority</option>
+          <option value="title">Sort by Title</option>
         </select>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'row' }}>
-
-        <div>
-          <div><h1>0</h1></div>
-          {elementData_0.map((ele) => {
-            if (ele.priority === 0) {
-              return (
-                <div className="messmenuwrapper">
-                  <ul className="messmenuflex messmenucards">
-                    <li className="rounded overflow-hidden shadow-2xl">
-                      <div className="px-6 py-4">
-                        <div className="font-bold text-xl mb-2">{ele.id}</div>
-                        <p className="text-gray-700 text-base">
-                          {ele.title}
-                        </p>
-                      </div>
-                    </li>
-                  </ul>
+      <div className="card-container">
+        {Object.entries(groupedAndSortedData).map(([groupKey, groupData]) => (
+          <div className="group-card" key={groupKey}>
+            <div className="group-title">{groupKey}</div>
+            {groupData.map((ele) => (
+              <div className="card" key={ele.id}>
+                <div className="card-content">
+                  <div className="card-id">
+                    <FontAwesomeIcon icon={faHeading} /> ID: {ele.id}
+                  </div>
+                  <div className="card-title">
+                    <FontAwesomeIcon icon={faTag} /> Title: {ele.title}
+                  </div>
+                  <div className="card-tag">
+                    <FontAwesomeIcon icon={faTag} /> Tag: {ele.tag}
+                  </div>
                 </div>
-              );
-            } else {
-              return null;
-            }
-          })}
-        </div>
-        <div>
-          <div><h1>1</h1></div>
-          {elementData_0.map((ele) => {
-            if (ele.priority === 1) {
-              return (
-                <div className="messmenuwrapper">
-                  <ul className="messmenuflex messmenucards">
-                    <li className="rounded overflow-hidden shadow-2xl">
-                      <div className="px-6 py-4">
-                        <div className="font-bold text-xl mb-2">{ele.id}</div>
-                        <p className="text-gray-700 text-base">
-                          {ele.title}
-                        </p>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-              );
-            } else {
-              return null;
-            }
-          })}
-        </div>
-        <div>
-          <div><h1>2</h1></div>
-          {elementData_0.map((ele) => {
-            if (ele.priority === 2) {
-              return (
-                <div className="messmenuwrapper">
-                  <ul className="messmenuflex messmenucards">
-                    <li className="rounded overflow-hidden shadow-2xl">
-                      <div className="px-6 py-4">
-                        <div className="font-bold text-xl mb-2">{ele.id}</div>
-                        <p className="text-gray-700 text-base">
-                          {ele.title}
-                        </p>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-              );
-            } else {
-              return null;
-            }
-          })}
-        </div>
-        <div>
-          <div><h1>3</h1></div>
-          {elementData_0.map((ele) => {
-            if (ele.priority === 3) {
-              return (
-                <div className="messmenuwrapper">
-                  <ul className="messmenuflex messmenucards">
-                    <li className="rounded overflow-hidden shadow-2xl">
-                      <div className="px-6 py-4">
-                        <div className="font-bold text-xl mb-2">{ele.id}</div>
-                        <p className="text-gray-700 text-base">
-                          {ele.title}
-                        </p>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-              );
-            } else {
-              return null;
-            }
-          })}
-        </div>
-        <div>
-          <div><h1>4</h1></div>
-          {elementData_0.map((ele) => {
-            if (ele.priority === 4) {
-              return (
-                <div className="messmenuwrapper">
-                  <ul className="messmenuflex messmenucards">
-                    <li className="rounded overflow-hidden shadow-2xl">
-                      <div className="px-6 py-4">
-                        <div className="font-bold text-xl mb-2">{ele.id}</div>
-                        <p className="text-gray-700 text-base">
-                          {ele.title}
-                        </p>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-              );
-            } else {
-              return null;
-            }
-          })}
-        </div>
-
+              </div>
+            ))}
+          </div>
+        ))}
       </div>
-
     </div>
   );
 }
